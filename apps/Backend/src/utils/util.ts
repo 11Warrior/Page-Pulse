@@ -5,6 +5,7 @@ const checkUrl = (url: unknown): URL => {
         throw new Error("Invalid URL Passed");
     }
 
+    // console.log(url);
     let parsed: URL;
     try {
         parsed = new URL(url.trim());
@@ -15,7 +16,7 @@ const checkUrl = (url: unknown): URL => {
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
         throw new Error("Invalid URL Passed");
     }
-
+    // console.log(parsed);
     return parsed;
 }
 
@@ -24,7 +25,7 @@ export const fetchUrl = async (url: unknown): Promise<{ response_time: number, h
 
     const start = Date.now();
 
-    const response = await axios.get(parsed.toString(), {
+    const response = await axios.get(parsed.href, {
         timeout: 10000,
         maxRedirects: 5,
         responseType: 'text'

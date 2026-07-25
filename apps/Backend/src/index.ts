@@ -11,7 +11,7 @@ app.use(cors({
     origin : process.env.FRONTEND_URL!
 }));
 
-app.use("api/v1", analyzeRouter);
+app.use("/api/v1", analyzeRouter);
 
 app.listen(PORT, () => {
     console.log("Server listening on port", PORT);
