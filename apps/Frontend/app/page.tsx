@@ -1,259 +1,143 @@
-"use client";
+"use client"
+import { useCallback, useState } from "react";
+import { Activity, ShieldCheck, GitBranchIcon } from "lucide-react";
+// import type { AuditResult } from "@/types";
 
-import { FormEvent, useState } from "react";
+import { AuditForm } from "../components/AuditForm";
 
-interface AuditReport {
+interface LastQuery {
+  // result: AuditResult;
   url: string;
-  finalUrl: string;
-  status: number;
-  responseTimeMs: number;
-  contentType: string | null;
-  title: string | null;
-  metaDescription: string | null;
-  h1Count: number;
-  imagesTotal: number;
-  imagesMissingAlt: number;
-  wordCount: number;
 }
 
-export default function Page() {
-  const [url, setUrl] = useState("");
+function App() {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [report, setReport] = useState<AuditReport | null>(null);
+  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-
+  const runAudit = useCallback(async (targetUrl: string) => {
     setLoading(true);
-    setError("");
-    setReport(null);
+    setLoading(false);
+    // setLastQuery({ result, url: targetUrl });
+  }, []);
 
-    try {
-      const res = await fetch("/api/audit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
+  // const handleResult = useCallback(
+  //   (result: AuditResult, queriedUrl: string) => {
+  //     setLastQuery({ result, url: queriedUrl });
+  //   },
+  //   [],
+  // );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Something went wrong");
-      } else {
-        setReport(data);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network Error");
-    } finally {
-      setLoading(false);
-    }
+  function retry() {
+    if (!lastQuery) return;
+    void runAudit(lastQuery.url);
   }
 
-  const altCoverage =
-    report && report.imagesTotal > 0
-      ? Math.round(
-          ((report.imagesTotal - report.imagesMissingAlt) /
-            report.imagesTotal) *
-            100
-        )
-      : 100;
-
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-5xl px-6 py-14">
-        {/* Hero */}
-        <div className="mb-12 text-center">
-          <h1 className="text-5xl font-bold tracking-tight">
-            Page<span className="text-cyan-400">Pulse</span>
-          </h1>
-
-          <p className="mt-4 text-lg text-slate-400">
-            Analyze any webpage for SEO & content quality in seconds.
-          </p>
-        </div>
-
-        {/* Search */}
-        <form
-          onSubmit={handleSubmit}
-          className="mb-10 flex flex-col gap-4 sm:flex-row"
-        >
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com"
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-5 py-4 outline-none transition focus:border-cyan-400"
-          />
-
-          <button
-            disabled={loading || !url.trim()}
-            className="rounded-xl bg-cyan-500 px-7 py-4 font-semibold text-black transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900">
+      {/* Top bar */}
+      <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm">
+              <Activity className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="leading-tight">
+              <p className="text-base font-semibold text-slate-900">Page Pulse</p>
+              <p className="text-xs text-slate-500">URL audit tool</p>
+            </div>
+          </div>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
           >
-            {loading ? "Analyzing..." : "Analyze"}
-          </button>
-        </form>
+            <GitBranchIcon className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Source</span>
+          </a>
+        </div>
+      </header>
 
-        {/* Error */}
-        {error && (
-          <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-            <p className="font-semibold text-red-400">Error</p>
-            <p className="text-sm text-slate-300">{error}</p>
-          </div>
-        )}
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        {/* Hero */}
+        <section className="mx-auto max-w-2xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+            Fast, read-only page audits
+          </span>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+            Audit any web page in seconds
+          </h1>
+          <p className="mt-4 text-base text-slate-600 sm:text-lg">
+            Enter a URL and Page Pulse will fetch it and report HTTP status, response time, page
+            title, meta description, headings, image alt text, and word count.
+          </p>
+        </section>
 
-        {/* Loading */}
-        {loading && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900 p-10 text-center">
-            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent"></div>
-            <p className="text-slate-400">Analyzing website...</p>
-          </div>
-        )}
+        {/* Form */}
+        <section className="mx-auto mt-8 max-w-2xl">
+          {/* <AuditForm onResult={handleResult} loading={loading} setLoading={setLoading} /> */}
+        </section>
 
-        {/* Report */}
-        {report && (
-          <div className="space-y-8">
-            {/* Website */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <h2 className="mb-3 text-xl font-semibold">
-                Website Information
-              </h2>
+        {/* Result */}
+        <section className="mx-auto mt-10 max-w-4xl">
+          {!lastQuery && !loading && (
+            <EmptyState />
+          )}
 
-              <a
-                href={report.finalUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-cyan-400 hover:underline"
-              >
-                {report.finalUrl}
-              </a>
-
-              <p className="mt-2 text-sm text-slate-400">
-                Content Type: {report.contentType}
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              <Card
-                title="HTTP Status"
-                value={String(report.status)}
-                color={
-                  report.status >= 200 && report.status < 300
-                    ? "text-green-400"
-                    : "text-red-400"
-                }
-              />
-
-              <Card
-                title="Response Time"
-                value={`${report.responseTimeMs} ms`}
-                color={
-                  report.responseTimeMs < 800
-                    ? "text-green-400"
-                    : report.responseTimeMs < 2500
-                    ? "text-yellow-400"
-                    : "text-red-400"
-                }
-              />
-
-              <Card
-                title="H1 Count"
-                value={String(report.h1Count)}
-              />
-
-              <Card
-                title="Word Count"
-                value={report.wordCount.toLocaleString()}
-              />
-            </div>
-
-            {/* SEO */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <h3 className="mb-3 text-lg font-semibold">Page Title</h3>
-
-                <p className="text-slate-300">
-                  {report.title || "No title found"}
-                </p>
-
-                {report.title && (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {report.title.length} characters
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <h3 className="mb-3 text-lg font-semibold">
-                  Meta Description
-                </h3>
-
-                <p className="text-slate-300">
-                  {report.metaDescription || "No meta description found"}
-                </p>
-
-                {report.metaDescription && (
-                  <p className="mt-2 text-sm text-slate-500">
-                    {report.metaDescription.length} characters
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Images */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Image Alt Coverage
-                </h3>
-
-                <span className="text-xl font-bold text-cyan-400">
-                  {altCoverage}%
-                </span>
-              </div>
-
-              <div className="h-3 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-cyan-400"
-                  style={{
-                    width: `${altCoverage}%`,
-                  }}
+          {loading && !lastQuery && <LoadingState />}
+{/* 
+          {lastQuery && (
+            <>
+              {lastQuery.result.ok ? (
+                <AuditReportView report={lastQuery.result.report} />
+              ) : (
+                <AuditErrorView
+                  message={lastQuery.result.error}
+                  canRetry={isRetryable(lastQuery.result.code)}
+                  onRetry={retry}
                 />
-              </div>
+              )}
+            </>
+          )} */}
+        </section>
+      </main>
 
-              <div className="mt-4 flex justify-between text-sm text-slate-400">
-                <span>Total Images: {report.imagesTotal}</span>
-
-                <span>
-                  Missing Alt: {report.imagesMissingAlt}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </main>
-  );
-}
-
-function Card({
-  title,
-  value,
-  color = "",
-}: {
-  title: string;
-  value: string;
-  color?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-      <p className="text-sm text-slate-400">{title}</p>
-
-      <h3 className={`mt-3 text-3xl font-bold ${color}`}>
-        {value}
-      </h3>
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-slate-500 sm:px-6">
+          Page Pulse &middot; A read-only URL auditing tool. No data is stored.
+        </div>
+      </footer>
     </div>
   );
 }
+
+function EmptyState() {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-10 text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+        <Activity className="h-7 w-7" aria-hidden="true" />
+      </div>
+      <p className="mt-4 text-base font-medium text-slate-700">No audit yet</p>
+      <p className="mt-1 text-sm text-slate-500">
+        Enter a URL above and hit Audit to see a full report here.
+      </p>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-4">
+      <div className="h-24 animate-pulse rounded-2xl bg-slate-200/70" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200/70" />
+        ))}
+      </div>
+      <p className="text-center text-sm text-slate-500">Fetching and analyzing the page…</p>
+    </div>
+  );
+}
+
+export default App;
