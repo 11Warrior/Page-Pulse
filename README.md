@@ -213,7 +213,6 @@ CI runs `pnpm test` and `pnpm build` on every push/PR via GitHub Actions (`.gith
 
 ## Known Limitations / What I'd Change With Another Day
 
-- **The `sucess` field name is a typo** (missing the second "s") that made it into the API contract early and is now used consistently across backend and frontend. Fixing it is a one-line change per file, but since it's a breaking API change for any existing consumer, I've left it as-is and documented it rather than silently fixing it without flagging the change.
 - **Word count doesn't distinguish main content from boilerplate** (nav bars, footers, cookie banners). A more accurate version would target `<main>`/`<article>` first, falling back to `<body>` only if neither exists.
 - **No caching.** Re-auditing the same URL twice in quick succession re-fetches it from scratch every time. A short-lived (~60s) in-memory cache keyed by URL would cut redundant load without meaningfully hurting freshness.
 - **No SSRF protection.** The URL validator currently checks only that the protocol is `http`/`https` — it doesn't block internal/private hosts (`localhost`, `127.0.0.1`, `169.254.169.254`, private IP ranges). For a tool that fetches arbitrary user-supplied URLs, this is worth closing before any real production exposure.
