@@ -1,40 +1,38 @@
 "use client"
-import { useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import { Activity, ShieldCheck, GitBranchIcon } from "lucide-react";
-// import type { AuditResult } from "@/types";
-
-import { AuditForm } from "../components/AuditForm";
-
-interface LastQuery {
-  // result: AuditResult;
-  url: string;
-}
+import axios from "axios";
 
 function App() {
   const [loading, setLoading] = useState(false);
-  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
+  const [lastFetchedData, setLastFetchedData] = useState<any>(null);
+  const [url, setUrl] = useState("");
 
-  const runAudit = useCallback(async (targetUrl: string) => {
-    setLoading(true);
-    setLoading(false);
-    // setLastQuery({ result, url: targetUrl });
+  useEffect(() => {
+    const query = localStorage.getItem('last-query');
+    if (query) {
+      setLastFetchedData(JSON.parse(query));
+    }
   }, []);
 
-  // const handleResult = useCallback(
-  //   (result: AuditResult, queriedUrl: string) => {
-  //     setLastQuery({ result, url: queriedUrl });
-  //   },
-  //   [],
-  // );
+  const getReport = async (e: React.FormEvent<HTMLFormElement>) => {
+    try {
+      e.preventDefault();
 
-  function retry() {
-    if (!lastQuery) return;
-    void runAudit(lastQuery.url);
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/analyze?url=${url}`);
+
+      setLastFetchedData(data);
+      localStorage.setItem('last-query', data)
+
+    } catch (error) {
+      console.error("[ERR] Failed to get the report from frontend");
+      throw error;
+    }
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900">
-      {/* Top bar */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2.5">
@@ -47,7 +45,7 @@ function App() {
             </div>
           </div>
           <a
-            href="https://github.com"
+            href="https://github.com/11Warrior/Page-Pulse"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
@@ -74,38 +72,48 @@ function App() {
           </p>
         </section>
 
-        {/* Form */}
+
         <section className="mx-auto mt-8 max-w-2xl">
-          {/* <AuditForm onResult={handleResult} loading={loading} setLoading={setLoading} /> */}
+          <form onSubmit={getReport} className="mb-8 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://example.com"
+              aria-label="URL to audit"
+              className="flex-1 rounded-md border border-border bg-card px-3 py-2 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={loading || !url.trim()}
+              className="rounded-md bg-green-400 cursor-pointer px-4 py-2 text-sm font-medium text-primary-foreground hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Auditing…" : "Run audit"}
+            </button>
+          </form>
         </section>
 
         {/* Result */}
         <section className="mx-auto mt-10 max-w-4xl">
-          {!lastQuery && !loading && (
-            <EmptyState />
-          )}
+          {
+            lastFetchedData === null ? <EmptyState /> : JSON.stringify(lastFetchedData, null, 2)
 
-          {loading && !lastQuery && <LoadingState />}
-{/* 
-          {lastQuery && (
-            <>
-              {lastQuery.result.ok ? (
-                <AuditReportView report={lastQuery.result.report} />
-              ) : (
-                <AuditErrorView
-                  message={lastQuery.result.error}
-                  canRetry={isRetryable(lastQuery.result.code)}
-                  onRetry={retry}
-                />
-              )}
-            </>
-          )} */}
+          }
+
         </section>
       </main>
 
       <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-slate-500 sm:px-6">
-          Page Pulse &middot; A read-only URL auditing tool. No data is stored.
+        <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-slate-700 sm:px-6 flex gap-5 justify-center">
+          <div>
+            Page Pulse &middot; A read-only URL auditing tool. <br />
+            <strong className="font-">"Built for Digital Heroes
+              Training Task",</strong>
+          </div>
+          <a href="https://digitalheroesco.com">
+            <img className="h-10 w-20" src="https://internshala-uploads.internshala.com/logo%2F61ede14cab2361642979660.png.webp" alt="" />
+          </a>
         </div>
       </footer>
     </div>
@@ -126,18 +134,18 @@ function EmptyState() {
   );
 }
 
-function LoadingState() {
-  return (
-    <div className="space-y-4">
-      <div className="h-24 animate-pulse rounded-2xl bg-slate-200/70" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200/70" />
-        ))}
-      </div>
-      <p className="text-center text-sm text-slate-500">Fetching and analyzing the page…</p>
-    </div>
-  );
-}
+// function LoadingState() {
+//   return (
+//     <div className="space-y-4">
+//       <div className="h-24 animate-pulse rounded-2xl bg-slate-200/70" />
+//       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+//         {Array.from({ length: 5 }).map((_, i) => (
+//           <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200/70" />
+//         ))}
+//       </div>
+//       <p className="text-center text-sm text-slate-500">Fetching and analyzing the page…</p>
+//     </div>
+//   );
+// }
 
 export default App;
