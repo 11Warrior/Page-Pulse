@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const checkUrl = (url: unknown): URL => {
+export const checkUrl = (url: unknown): URL => {
     if (typeof (url) !== 'string' || url.trim().length === 0) {
         throw new Error("Invalid URL Passed");
     }
@@ -28,6 +28,7 @@ export const fetchUrl = async (url: unknown): Promise<{ response_time: number, h
     const response = await axios.get(parsed.href, {
         timeout: 10000,
         maxRedirects: 5,
+        validateStatus: () => true,
         responseType: 'text'
     });
 

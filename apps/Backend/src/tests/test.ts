@@ -1,4 +1,5 @@
 import {analyzeSite} from "../services/analyze.service"
+import { checkUrl } from "../utils/util";
 
 describe('analyzeSite — happy path', () => {
   const html = `
@@ -36,14 +37,11 @@ describe('analyzeSite — happy path', () => {
 
   it('counts images missing alt text — both empty alt="" and a fully absent alt attribute count', async () => {
     const result = await analyzeSite(html);
-    // b.png has alt="" and c.png has no alt attribute at all -> 2 missing out of 3 total
     expect(result.images_missing_alt_text).toBe(2);
   });
 
   it('produces a word count that excludes <script> tag content', async () => {
     const result = await analyzeSite(html);
-    // "Welcome"(1) + "Second heading"(2 words) + 13-word paragraph = 16 words.
-    // If the script's JS code leaked into the count, this would be much higher.
     expect(result.word_count).toBe(16);
   });
 });
@@ -83,5 +81,42 @@ describe('analyzeSite — additional edge case: page with no <body> tag at all',
     expect(result.page_title).toBe('No Body Here');
     expect(result.h1_count).toBe(1);
     expect(result.word_count).toBeGreaterThan(0);
+  });
+});
+
+//------------------- Testing the  URL -------------------------
+
+describe('checkUrl — happy path', () => {
+  it('accepts well-formed http and https URLs and returns a URL object', () => {
+    const result = checkUrl('https://example.com');
+    expect(result).toBeInstanceOf(URL);
+    expect(result.href).toBe('https://example.com/');
+  });
+
+  it('preserves path and query string', () => {
+    const result = checkUrl('http://example.com/path?query=1');
+    expect(result.pathname).toBe('/path');
+    expect(result.search).toBe('?query=1');
+  });
+});
+
+describe('checkUrl — failure case: not a URL at all', () => {
+  it('throws on plain text and gibberish', () => {
+    expect(() => checkUrl('not a url')).toThrow('Invalid URL Passed');
+    expect(() => checkUrl('just some words here')).toThrow('Invalid URL Passed');
+    expect(() => checkUrl('')).toThrow('Invalid URL Passed');
+  });
+
+  it('throws on missing/undefined/null input', () => {
+    expect(() => checkUrl(undefined)).toThrow('Invalid URL Passed');
+    expect(() => checkUrl(null)).toThrow('Invalid URL Passed');
+  });
+});
+
+describe('checkUrl — failure case: wrong protocol', () => {
+  it('throws on non-http(s) protocols even though they are structurally valid URLs', () => {
+    expect(() => checkUrl('ftp://example.com')).toThrow('Invalid URL Passed');
+    expect(() => checkUrl('file:///etc/passwd')).toThrow('Invalid URL Passed');
+    expect(() => checkUrl('javascript:alert(1)')).toThrow('Invalid URL Passed');
   });
 });

@@ -9,9 +9,14 @@ function App() {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    const query = localStorage.getItem('last-query');
+    const query = localStorage.getItem("last-query");
+
     if (query) {
-      setLastFetchedData(JSON.parse(query));
+      try {
+        setLastFetchedData(JSON.parse(query));
+      } catch {
+        localStorage.removeItem("last-query");
+      }
     }
   }, []);
 
@@ -22,7 +27,7 @@ function App() {
       const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/analyze?url=${url}`);
 
       setLastFetchedData(data);
-      localStorage.setItem('last-query', data)
+      localStorage.setItem('last-query', JSON.stringify(data))
 
     } catch (error) {
       console.error("[ERR] Failed to get the report from frontend");
@@ -33,6 +38,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900">
+
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2.5">
@@ -97,14 +103,18 @@ function App() {
         {/* Result */}
         <section className="mx-auto mt-10 max-w-4xl">
           {
-            lastFetchedData === null ? <EmptyState /> : JSON.stringify(lastFetchedData, null, 2)
+            lastFetchedData === null ? <EmptyState /> : (
+              <pre className="overflow-auto rounded-xl bg-[#1e1e1e] p-6 font-mono text-sm leading-6 text-gray-200 border border-gray-700">
+                <code>{JSON.stringify(lastFetchedData, null, 2)}</code>
+              </pre>
+            )
 
           }
-
         </section>
+
       </main>
 
-      <footer className="border-t border-slate-200 bg-white">
+      <footer className="border-t border-slate-200 bg-white w-full h-full">
         <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-slate-700 sm:px-6 flex gap-5 justify-center">
           <div>
             Page Pulse &middot; A read-only URL auditing tool. <br />
@@ -116,6 +126,7 @@ function App() {
           </a>
         </div>
       </footer>
+
     </div>
   );
 }

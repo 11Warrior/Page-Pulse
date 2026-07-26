@@ -3,10 +3,10 @@
     "compilerOptions": {
         "rootDir": "./src",
         "outDir": "./dist",
+        "types": ["node", "jest"]
     },
     "exclude": [
-        "src/tests/**/*",
         "node_modules",
         "dist"
-    ]
+    ],
 }

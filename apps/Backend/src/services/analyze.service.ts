@@ -35,5 +35,4 @@ export const analyzeSite = async (html: string): Promise<analysisType> => {
         images_missing_alt_text,
         word_count
     };
-
 }

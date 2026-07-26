@@ -16,8 +16,3 @@ app.use("/api/v1", analyzeRouter);
 app.listen(PORT, () => {
     console.log("Server listening on port", PORT);
 });
-
-
-
-
-console.log("Hello World");
